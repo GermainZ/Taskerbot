@@ -45,7 +45,8 @@ class Bot(object):
         logging.debug('Checking subreddit: %s…', subreddit)
         sub = self.subreddits[subreddit]
         for comment in self.r.get_comments(subreddit, limit=100):
-            if comment.banned_by or comment.author.name not in sub['mods']:
+            if (comment.banned_by or not comment.author or
+                    comment.author.name not in sub['mods']):
                 continue
 
             # Check for @rule command.
@@ -94,7 +95,7 @@ class Bot(object):
         logging.debug('Checking mail…')
         for mail in self.r.get_unread(True, True):
             mail.mark_as_read()
-            logging.debug('New mail: "{}".'.format(mail.body))
+            logging.debug('New mail: "%s".', mail.body)
             match = re.search(r'@refresh (.*)', mail.body)
             if not match:
                 continue
