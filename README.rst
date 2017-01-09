@@ -12,12 +12,13 @@ Usage
 Taskerbot can be invoked by any comment containing one of the following
 commands (**all arguments are required**):
 
-- ``@rule {reason}``: **removes a thread, leaving an appropriate flair and
-  comment**. ``reason`` is one of the removal reasons' keys (see
-  `Removal reasons`_). If no corresponding removal reason is
-  found, the ``Generic`` reason is used instead.
+- ``@rule {reason} [note]``: **removes a thread, leaving an appropriate flair
+  and comment**. ``reason`` is one of the removal reasons' keys (see `Removal
+  reasons`_). If no corresponding removal reason is found, the ``Generic``
+  reason is used instead. If ``note`` is provided, it will be added to the
+  message.
 
-  Example: ``@rule 1``, ``@rule spam``.
+  Example: ``@rule 1``, ``@rule spam``, ``@rule repost this is a note``.
 
 - ``@spam``: **marks the submission as spam and removes it**.
 

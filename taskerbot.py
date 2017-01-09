@@ -48,13 +48,16 @@ class Bot(object):
                 continue
 
             # Check for @rule command.
-            match = re.search(r'@rule (\w*)', comment.body)
+            match = re.search(r'@rule (\w*) *(.*)', comment.body)
             if match:
                 rule = match.group(1)
+                note = match.group(2)
                 logging.debug('Rule %s matched.', rule)
                 if rule not in sub['reasons']:
                     rule = 'Generic'
                 msg = sub['reasons'][rule]['Message']
+                if note:
+                    msg = '{}\n\n{}'.format(msg, note)
 
                 parent = comment.parent()
                 comment.mod.remove()
