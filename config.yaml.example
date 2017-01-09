@@ -1,0 +1,7 @@
+User Agent: 'Taskerbot run by /u/owner_username'
+Username: 'username'
+Password: 'taskerbot'
+Client ID: 'client_id'
+Client Secret: 'client_secret'
+Subreddits:
+    - 'some_subreddit'
