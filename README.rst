@@ -19,6 +19,8 @@ commands (**all arguments are required**):
 
   Example: ``@rule 1``, ``@rule spam``.
 
+- ``@spam``: **marks the submission as spam and removes it**.
+
 - ``@ban {duration} "{reason}" "{message}"``: **bans the comment/thread's
   author**. All three arguments are required. ``duration`` is the ban's
   duration in days, ``reason`` is the ban's reason (visible only to mods), and

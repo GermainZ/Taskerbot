@@ -73,6 +73,18 @@ class Bot(object):
                 elif parent.fullname.startswith('t1_'):
                     logging.debug('Removed comment.')
 
+            # Check for @spam command.
+            if comment.body.lower().startswith('@spam'):
+                parent = comment.parent()
+                comment.mod.remove()
+                parent.mod.remove(spam=True)
+                if parent.fullname.startswith('t3_'):
+                    logging.debug('Removed submission (spam).')
+                elif parent.fullname.startswith('t1_'):
+                    logging.debug('Removed comment (spam).')
+                self.log(subreddit, '{} removed r/{}{} (spam)'.format(
+                    comment.author.name, subreddit,
+                    parent.permalink(fast=True)))
             # Check for @ban command.
             match = re.search(r'@ban (\d*) "([^"]*)" "([^"]*)"', comment.body)
             if match:
