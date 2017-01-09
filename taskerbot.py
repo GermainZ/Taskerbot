@@ -77,6 +77,9 @@ class Bot(object):
                 elif parent.fullname.startswith('t1_'):
                     logging.debug('Removed comment.')
 
+                self.log(subreddit, '{} removed r/{}{}'.format(
+                    comment.author.name, subreddit,
+                    comment.permalink(fast=True)))
             # Check for @spam command.
             if comment.body.lower().startswith('@spam'):
                 parent = comment.parent()
@@ -88,7 +91,7 @@ class Bot(object):
                     logging.debug('Removed comment (spam).')
                 self.log(subreddit, '{} removed r/{}{} (spam)'.format(
                     comment.author.name, subreddit,
-                    parent.permalink(fast=True)))
+                    comment.permalink(fast=True)))
             # Check for @ban command.
             match = re.search(r'@ban (\d*) "([^"]*)" "([^"]*)"', comment.body,
                               re.IGNORECASE)
@@ -105,6 +108,16 @@ class Bot(object):
                     parent.author.name, duration=duration, note=reason,
                     ban_message=msg)
                 logging.debug('User banned.')
+                self.log(subreddit, '{} banned u/{}'.format(
+                    comment.author.name, parent.author.name))
+
+    def log(self, subreddit, msg):
+        logs_page = self.r.subreddit(subreddit).wiki['taskerbot_logs']
+        try:
+            logs_content = logs_page.content_md
+        except TypeError:
+            logs_content = ""
+        logs_page.edit("{}{}  \n".format(logs_content, msg))
 
     def check_mail(self):
         logging.debug('Checking mail…')

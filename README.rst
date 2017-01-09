@@ -177,6 +177,11 @@ patrol.
    "View source" in the bottom right).
 
    __ https://www.reddit.com/r/Android/wiki/taskerbot
+3. Create a new wiki page on the subreddit called ``taskerbot_logs``. You can
+   keep it blank (Taskerbot will always append to it). This page will be used
+   to log mod actions.
+
+PS. Make sure to make the wiki pages editable by mods only.
 
 Use a `YAML validator`_ to make sure the configuration file is valid.
 
