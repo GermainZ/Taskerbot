@@ -48,7 +48,8 @@ class Bot(object):
                 continue
 
             # Check for @rule command.
-            match = re.search(r'@rule (\w*) *(.*)', comment.body)
+            match = re.search(r'@rule (\w*) *(.*)', comment.body,
+                              re.IGNORECASE)
             if match:
                 rule = match.group(1)
                 note = match.group(2)
@@ -89,7 +90,8 @@ class Bot(object):
                     comment.author.name, subreddit,
                     parent.permalink(fast=True)))
             # Check for @ban command.
-            match = re.search(r'@ban (\d*) "([^"]*)" "([^"]*)"', comment.body)
+            match = re.search(r'@ban (\d*) "([^"]*)" "([^"]*)"', comment.body,
+                              re.IGNORECASE)
             if match:
                 duration = match.group(1)
                 reason = match.group(2)
@@ -109,7 +111,7 @@ class Bot(object):
         for mail in self.r.inbox.unread():
             mail.mark_read()
             logging.debug('New mail: "%s".', mail.body)
-            match = re.search(r'@refresh (.*)', mail.body)
+            match = re.search(r'@refresh (.*)', mail.body, re.IGNORECASE)
             if not match:
                 continue
             subreddit = match.group(1)
