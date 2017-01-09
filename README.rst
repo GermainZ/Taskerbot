@@ -88,12 +88,17 @@ of subreddits to patrol. The syntax is as follows:
 .. code:: yaml
 
    User Agent: 'user agent here'
+   Client ID: 'client id here'
+   Client Secret: 'client secret here'
    Username: 'bot username here'
    Password: 'bot password here'
    Subreddits:
        - 'SomeSubreddit'
        - 'AnotherSubreddit'
        - 'YetAnotherSub'
+
+To obtain the client ID and secret, please follow reddit's `OAuth2 First Steps
+guide`_.
 
 Use a `YAML validator`_ to make sure the configuration file is valid.
 
@@ -174,3 +179,4 @@ Use a `YAML validator`_ to make sure the configuration file is valid.
 
 .. _YAML validator: http://www.yamllint.com/
 .. _YAML: http://www.yaml.org/
+.. _OAuth2 First Steps guide: https://github.com/reddit/reddit/wiki/OAuth2-Quick-Start-Example#first-steps

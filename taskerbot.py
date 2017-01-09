@@ -12,8 +12,6 @@ class Bot(object):
 
     def __init__(self, r):
         self.r = r
-        logging.debug('Logging in…')
-        self.r.login(USERNAME, PASSWORD)
         logging.debug('Success.')
         self.subreddits = {}
         for subreddit in SUBREDDITS:
@@ -21,30 +19,30 @@ class Bot(object):
             self.subreddits[subreddit] = {}
             sub = self.subreddits[subreddit]
             logging.debug('Loading mods…')
-            sub['mods'] = list(redditor.name for redditor in
-                               self.r.get_moderators(subreddit))
+            sub['mods'] = list(mod.name for mod in
+                               self.r.subreddit(subreddit).moderator())
             logging.debug('Mods loaded: %s.', sub['mods'])
             logging.debug('Loading reasons…')
             sub['reasons'] = yaml.load(html.unescape(
-                self.r.get_wiki_page(subreddit, 'taskerbot').content_md))
+                self.r.subreddit(subreddit).wiki['taskerbot'].content_md))
             logging.debug('Reasons loaded.')
 
     def refresh_sub(self, subreddit):
         logging.debug('Refreshing subreddit: %s…', subreddit)
         sub = self.subreddits[subreddit]
         logging.debug('Loading mods…')
-        sub['mods'] = list(redditor.name for redditor in
-                           self.r.get_moderators(subreddit))
+        sub['mods'] = list(mod.name for mod in
+                           self.r.subreddit(subreddit).moderator())
         logging.debug('Mods loaded: %s.', sub['mods'])
         logging.debug('Loading reasons…')
         sub['reasons'] = yaml.load(html.unescape(
-            self.r.get_wiki_page(subreddit, 'taskerbot').content_md))
+            self.r.subreddit(subreddit).wiki['taskerbot'].content_md))
         logging.debug('Reasons loaded.')
 
     def check_comments(self, subreddit):
         logging.debug('Checking subreddit: %s…', subreddit)
         sub = self.subreddits[subreddit]
-        for comment in self.r.get_comments(subreddit, limit=100):
+        for comment in self.r.subreddit(subreddit).comments(limit=100):
             if (comment.banned_by or not comment.author or
                     comment.author.name not in sub['mods']):
                 continue
@@ -58,9 +56,9 @@ class Bot(object):
                     rule = 'Generic'
                 msg = sub['reasons'][rule]['Message']
 
-                parent = self.r.get_info(thing_id=comment.parent_id)
-                comment.remove()
-                parent.remove()
+                parent = comment.parent()
+                comment.mod.remove()
+                parent.mod.remove()
 
                 if parent.fullname.startswith('t3_'):
                     logging.debug('Removed submission.')
@@ -70,8 +68,8 @@ class Bot(object):
                         author=parent.author.name)
                     msg = '{header}\n\n{msg}\n\n{footer}'.format(
                         header=header, msg=msg, footer=footer)
-                    parent.add_comment(msg).distinguish()
-                    parent.set_flair(sub['reasons'][rule]['Flair'])
+                    parent.reply(msg).mod.distinguish(sticky=True)
+                    parent.mod.flair(sub['reasons'][rule]['Flair'])
                 elif parent.fullname.startswith('t1_'):
                     logging.debug('Removed comment.')
 
@@ -83,18 +81,18 @@ class Bot(object):
                 msg = match.group(3)
                 logging.debug('Ban (%s: %s -- %s) matched.', duration, reason,
                               msg)
-                parent = self.r.get_info(thing_id=comment.parent_id)
-                comment.remove()
-                parent.remove()
-                self.r.get_subreddit(subreddit).add_ban(
+                parent = comment.parent()
+                comment.mod.remove()
+                parent.mod.remove()
+                self.r.subreddit(subreddit).banned.add(
                     parent.author.name, duration=duration, note=reason,
                     ban_message=msg)
                 logging.debug('User banned.')
 
     def check_mail(self):
         logging.debug('Checking mail…')
-        for mail in self.r.get_unread(True, True):
-            mail.mark_as_read()
+        for mail in self.r.inbox.unread():
+            mail.mark_read()
             logging.debug('New mail: "%s".', mail.body)
             match = re.search(r'@refresh (.*)', mail.body)
             if not match:
@@ -102,18 +100,15 @@ class Bot(object):
             subreddit = match.group(1)
             if subreddit in self.subreddits:
                 sub = self.subreddits[subreddit]
-                if mail.author.name in sub['mods']:
+                if mail.author in sub['mods']:
                     self.refresh_sub(subreddit)
-                    self.r.send_message(
-                        mail.author.name, "Taskerbot refresh",
+                    mail.reply(
                         "Refreshed mods and reasons for {}!".format(subreddit))
                 else:
-                    self.r.send_message(
-                        mail.author.name, "Taskerbot refresh",
+                    mail.reply(
                         ("Unauthorized: not an r/{} mod").format(subreddit))
             else:
-                self.r.send_message(mail.author.name, "Taskerbot refresh",
-                                    "Unrecognized sub:  {}.".format(subreddit))
+                mail.reply("Unrecognized sub:  {}.".format(subreddit))
 
     def run(self):
         while True:
@@ -131,6 +126,8 @@ class Bot(object):
 if __name__ == '__main__':
     with open('config.yaml') as config_file:
         CONFIG = yaml.load(config_file)
+        CLIENT_ID = CONFIG['Client ID']
+        CLIENT_SECRET = CONFIG['Client Secret']
         USERNAME = CONFIG['Username']
         PASSWORD = CONFIG['Password']
         SUBREDDITS = CONFIG['Subreddits']
@@ -139,5 +136,8 @@ if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                         format='%(asctime)s %(levelname)s: %(message)s')
     logging.getLogger('requests').setLevel(logging.WARNING)
-    MODBOT = Bot(Reddit(user_agent=USER_AGENT))
+    logging.debug('Logging in…')
+    MODBOT = Bot(Reddit(client_id=CLIENT_ID, client_secret=CLIENT_SECRET,
+                        user_agent=USER_AGENT, username=USERNAME,
+                        password=PASSWORD))
     MODBOT.run()
