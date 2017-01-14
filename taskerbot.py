@@ -5,6 +5,8 @@ import sys
 import time
 
 from praw import Reddit
+from praw.models.reddit.comment import Comment
+from praw.models.reddit.submission import Submission
 import yaml
 
 
@@ -46,68 +48,87 @@ class Bot(object):
             if (comment.banned_by or not comment.author or
                     comment.author.name not in sub['mods']):
                 continue
+            report = {'source': comment, 'reason': comment.body,
+                      'author': comment.author.name}
+            self.handle_report(subreddit, report, comment.parent())
 
-            # Check for @rule command.
-            match = re.search(r'@rule (\w*) *(.*)', comment.body,
-                              re.IGNORECASE)
-            if match:
-                rule = match.group(1)
-                note = match.group(2)
-                logging.info('Rule %s matched.', rule)
-                if rule not in sub['reasons']:
-                    rule = 'Generic'
-                msg = sub['reasons'][rule]['Message']
-                if note:
-                    msg = '{}\n\n{}'.format(msg, note)
+    def check_reports(self, subreddit):
+        logging.info('Checking subreddit reports: %s…', subreddit)
+        for reported_submission in self.r.subreddit(subreddit).mod.reports():
+            if not reported_submission.mod_reports:
+                continue
 
-                parent = comment.parent()
-                comment.mod.remove()
-                parent.mod.remove()
+            report = {'reason': reported_submission.mod_reports[0][0],
+                      'author': reported_submission.mod_reports[0][1]}
+            self.handle_report(subreddit, report, reported_submission)
 
-                if parent.fullname.startswith('t3_'):
-                    logging.info('Removed submission.')
-                    header = sub['reasons']['Header'].format(
-                        author=parent.author.name)
-                    footer = sub['reasons']['Footer'].format(
-                        author=parent.author.name)
-                    msg = '{header}\n\n{msg}\n\n{footer}'.format(
-                        header=header, msg=msg, footer=footer)
-                    parent.reply(msg).mod.distinguish(sticky=True)
-                    parent.mod.flair(sub['reasons'][rule]['Flair'])
-                elif parent.fullname.startswith('t1_'):
-                    logging.info('Removed comment.')
+    def handle_report(self, subreddit, report, target):
+        sub = self.subreddits[subreddit]
+        # Check for @rule command.
+        match = re.search(r'@rule (\w*) *(.*)', report['reason'],
+                          re.IGNORECASE)
+        if match:
+            rule = match.group(1)
+            note = match.group(2)
+            logging.info('Rule %s matched.', rule)
+            if rule not in sub['reasons']:
+                rule = 'Generic'
+            msg = sub['reasons'][rule]['Message']
+            if note:
+                msg = '{}\n\n{}'.format(msg, note)
 
-                self.log(subreddit, '{} removed {}'.format(
-                    comment.author.name, comment.permalink(fast=True)))
-            # Check for @spam command.
-            if comment.body.lower().startswith('@spam'):
-                parent = comment.parent()
-                comment.mod.remove()
-                parent.mod.remove(spam=True)
-                if parent.fullname.startswith('t3_'):
-                    logging.info('Removed submission (spam).')
-                elif parent.fullname.startswith('t1_'):
-                    logging.info('Removed comment (spam).')
-                self.log(subreddit, '{} removed {} (spam)'.format(
-                    comment.author.name, comment.permalink(fast=True)))
-            # Check for @ban command.
-            match = re.search(r'@ban (\d*) "([^"]*)" "([^"]*)"', comment.body,
-                              re.IGNORECASE)
-            if match:
-                duration = match.group(1)
-                reason = match.group(2)
-                msg = match.group(3)
-                logging.info('Ban (%s: %s -- %s) matched.', duration, reason,
-                             msg)
-                parent = comment.parent()
-                comment.mod.remove()
-                parent.mod.remove()
-                self.r.subreddit(subreddit).banned.add(
-                    parent.author.name, duration=duration, note=reason,
-                    ban_message=msg)
-                logging.info('User banned.')
-                self.log(subreddit, '{} banned u/{}'.format(
-                    comment.author.name, parent.author.name))
+            if 'source' in report:
+                report['source'].mod.remove()
+            target.mod.remove()
+
+            if isinstance(target, Submission):
+                logging.info('Removed submission.')
+                header = sub['reasons']['Header'].format(
+                    author=target.author.name)
+                footer = sub['reasons']['Footer'].format(
+                    author=target.author.name)
+                msg = '{header}\n\n{msg}\n\n{footer}'.format(
+                    header=header, msg=msg, footer=footer)
+                target.reply(msg).mod.distinguish(sticky=True)
+                target.mod.flair(sub['reasons'][rule]['Flair'])
+                permalink = target.permalink
+            elif isinstance(target, Comment):
+                logging.info('Removed comment.')
+                permalink = target.permalink(fast=True)
+
+            self.log(subreddit, '{} removed {}'.format(
+                report['author'], permalink))
+        # Check for @spam command.
+        if report['reason'].lower().startswith('@spam'):
+            if 'source' in report:
+                report['source'].mod.remove()
+            target.mod.remove(spam=True)
+            if isinstance(target, Submission):
+                logging.info('Removed submission (spam).')
+                permalink = target.permalink
+            elif isinstance(target, Comment):
+                logging.info('Removed comment (spam).')
+                permalink = target.permalink(fast=True)
+            self.log(subreddit, '{} removed {} (spam)'.format(
+                report['author'], permalink))
+        # Check for @ban command.
+        match = re.search(r'@ban (\d*) "([^"]*)" "([^"]*)"', report['reason'],
+                          re.IGNORECASE)
+        if match:
+            duration = match.group(1)
+            reason = match.group(2)
+            msg = match.group(3)
+            logging.info('Ban (%s: %s -- %s) matched.', duration, reason,
+                         msg)
+            if 'source' in report:
+                report['source'].mod.remove()
+            target.mod.remove()
+            self.r.subreddit(subreddit).banned.add(
+                target.author.name, duration=duration, note=reason,
+                ban_message=msg)
+            logging.info('User banned.')
+            self.log(subreddit, '{} banned u/{}'.format(
+                report['author'], target.author.name))
 
     def log(self, subreddit, msg):
         logs_page = self.r.subreddit(subreddit).wiki['taskerbot_logs']
@@ -144,6 +165,7 @@ class Bot(object):
             for subreddit in SUBREDDITS:
                 try:
                     self.check_comments(subreddit)
+                    self.check_reports(subreddit)
                     self.check_mail()
                 except Exception as exception:
                     logging.exception(exception)

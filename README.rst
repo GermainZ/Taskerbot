@@ -9,8 +9,8 @@ via the bot.
 Usage
 =====
 
-Taskerbot can be invoked by any comment containing one of the following
-commands (**all arguments are required**):
+Taskerbot can be invoked by any comment or moderator report containing one of
+the following commands (**all arguments are required**):
 
 - ``@rule {reason} [note]``: **removes a thread, leaving an appropriate flair
   and comment**. ``reason`` is one of the removal reasons' keys (see `Removal
@@ -30,8 +30,8 @@ commands (**all arguments are required**):
 
   Example: ``@ban 3600 "spammer" "repeatedly spamming somedomain.com"``
 
-Multiple actions can be specified at once. Taskerbot will automatically remove
-the comment that invoked it.
+Multiple actions can be specified at once. If Taskerbot was invoked by a
+comment (as opposed to a moderator report), it will automatically remove it.
 
 - **Refreshing the list of moderators/removal reasons**:
 
@@ -43,7 +43,11 @@ the comment that invoked it.
   Note that this is case sensitive, so make sure it's the same as what's in the
   configuration file (see `Configuration file`_).
 
-Only comments made by/mails sent by the subreddit's moderators are checked.
+Only moderator reports and comments made by/mails sent by the subreddit's
+moderators are checked.
+
+PS. Reddit silently ignores reports on removed posts, so Taskerbot won't see
+those.
 
 Setup
 =====
