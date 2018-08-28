@@ -112,20 +112,31 @@ class Bot(object):
             self.log(subreddit, '{} removed {} (spam)'.format(
                 report['author'], permalink))
         # Check for @ban command.
-        match = re.search(r'@ban (\d*) "([^"]*)" "([^"]*)"', report['reason'],
-                          re.IGNORECASE)
-        if match:
-            duration = match.group(1)
-            reason = match.group(2)
-            msg = match.group(3)
-            logging.info('Ban (%s: %s -- %s) matched.', duration, reason,
-                         msg)
+        temp_match = re.search(r'@ban (\d*) "([^"]*)" "([^"]*)"', report['reason'],
+                          re.IGNORECASE) # Temporary ban
+        perma_match = re.search(r'@ban "([^"]*)" "([^"]*)"', report['reason'],
+                          re.IGNORECASE) # Permanent ban
+        if (temp_match or perma_match):
+            if temp_match:
+                duration = match.group(1)
+                reason = match.group(2)
+                msg = match.group(3)
+                logging.info('Ban (%s: %s -- %s) matched.', duration, reason,
+                             msg)
+                self.r.subreddit(subreddit).banned.add(
+                    target.author.name, duration=duration, note=reason,
+                    ban_message=msg)
+            if perma_match:
+                reason = match.group(1)
+                msg = match.group(2)
+                logging.info('Ban (Permanent: %s -- %s) matched.', reason,
+                             msg)
+                self.r.subreddit(subreddit).banned.add(
+                    target.author.name, note=reason,
+                    ban_message=msg)
             if 'source' in report:
                 report['source'].mod.remove()
             target.mod.remove()
-            self.r.subreddit(subreddit).banned.add(
-                target.author.name, duration=duration, note=reason,
-                ban_message=msg)
             logging.info('User banned.')
             self.log(subreddit, '{} banned u/{}'.format(
                 report['author'], target.author.name))
