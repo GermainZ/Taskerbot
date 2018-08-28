@@ -10,7 +10,7 @@ Usage
 =====
 
 Taskerbot can be invoked by any comment or moderator report containing one of
-the following commands (**all arguments are required**):
+the following commands:
 
 - ``@rule {reason} [note]``: **removes a thread, leaving an appropriate flair
   and comment**. ``reason`` is one of the removal reasons' keys (see `Removal
@@ -22,11 +22,11 @@ the following commands (**all arguments are required**):
 
 - ``@spam``: **marks the submission as spam and removes it**.
 
-- ``@ban {duration} "{reason}" "{message}"``: **bans the comment/thread's
-  author**. All three arguments are required. ``duration`` is the ban's
-  duration in days, ``reason`` is the ban's reason (visible only to mods), and
-  ``message`` is the message the banned user will receive. ``reason`` and
-  ``message`` must be between quotations (``""```) (escapes are not supported).
+- ``@ban [duration] "{reason}" "{message}"``: **bans the comment/thread's
+  author**. The last two arguments are required. ``duration``, if provided, is
+  the ban's duration in days, ``reason`` is the ban's reason (visible only to
+  mods), and ``message`` is the message the banned user will receive. ``reason``
+  and ``message`` must be between quotations (``""```) (escapes are not supported).
 
   Example: ``@ban 3600 "spammer" "repeatedly spamming somedomain.com"``
 
