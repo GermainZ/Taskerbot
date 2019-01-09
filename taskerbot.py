@@ -44,7 +44,7 @@ class Bot(object):
     def check_comments(self, subreddit):
         logging.info('Checking subreddit: %s…', subreddit)
         sub = self.subreddits[subreddit]
-        for comment in self.r.subreddit(subreddit).comments(limit=100):
+        for comment in self.r.subreddit(subreddit).comments(limit=300):
             if (comment.banned_by or not comment.author or
                     comment.author.name not in sub['mods']):
                 continue
