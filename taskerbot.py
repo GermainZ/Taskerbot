@@ -25,7 +25,7 @@ class Bot(object):
                                self.r.subreddit(subreddit).moderator())
             logging.info('Mods loaded: %s.', sub['mods'])
             logging.info('Loading reasons…')
-            sub['reasons'] = yaml.load(html.unescape(
+            sub['reasons'] = yaml.safe_load(html.unescape(
                 self.r.subreddit(subreddit).wiki['taskerbot'].content_md))
             logging.info('Reasons loaded.')
 
@@ -37,7 +37,7 @@ class Bot(object):
                            self.r.subreddit(subreddit).moderator())
         logging.info('Mods loaded: %s.', sub['mods'])
         logging.info('Loading reasons…')
-        sub['reasons'] = yaml.load(html.unescape(
+        sub['reasons'] = yaml.safe_load(html.unescape(
             self.r.subreddit(subreddit).wiki['taskerbot'].content_md))
         logging.info('Reasons loaded.')
 
@@ -186,7 +186,7 @@ class Bot(object):
 
 if __name__ == '__main__':
     with open('config.yaml') as config_file:
-        CONFIG = yaml.load(config_file)
+        CONFIG = yaml.safe_load(config_file)
         CLIENT_ID = CONFIG['Client ID']
         CLIENT_SECRET = CONFIG['Client Secret']
         USERNAME = CONFIG['Username']
