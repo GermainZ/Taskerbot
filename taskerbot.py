@@ -7,6 +7,7 @@ import time
 from praw import Reddit
 from praw.models.reddit.comment import Comment
 from praw.models.reddit.submission import Submission
+import prawcore.exceptions
 import yaml
 
 
@@ -15,6 +16,7 @@ class Bot(object):
     def __init__(self, r):
         self.r = r
         logging.info('Success.')
+        self.logging_enabled = True
         self.subreddits = {}
         for subreddit in SUBREDDITS:
             logging.info('Checking subreddit: %s…', subreddit)
@@ -142,11 +144,17 @@ class Bot(object):
                 report['author'], target.author.name))
 
     def log(self, subreddit, msg):
+        if not self.logging_enabled:
+            return
         logs_page = self.r.subreddit(subreddit).wiki['taskerbot_logs']
         try:
             logs_content = logs_page.content_md
         except TypeError:
             logs_content = ""
+        except prawcore.exceptions.NotFound:
+            logging.warning(f'r/{subreddit}/wiki/taskerbot_logs not found, disabling logging')
+            self.logging_enabled = False
+            return
         logs_page.edit("{}{}  \n".format(logs_content, msg))
 
     def check_mail(self):
