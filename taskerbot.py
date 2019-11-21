@@ -83,21 +83,21 @@ class Bot(object):
                 report['source'].mod.remove()
             target.mod.remove()
 
+            header = sub['reasons']['Header'].format(
+                author=target.author.name)
+            footer = sub['reasons']['Footer'].format(
+                author=target.author.name)
+            msg = '{header}\n\n{msg}\n\n{footer}'.format(
+                header=header, msg=msg, footer=footer)
+            target.reply(msg).mod.distinguish(sticky=True)
+
             if isinstance(target, Submission):
                 logging.info('Removed submission.')
-                header = sub['reasons']['Header'].format(
-                    author=target.author.name)
-                footer = sub['reasons']['Footer'].format(
-                    author=target.author.name)
-                msg = '{header}\n\n{msg}\n\n{footer}'.format(
-                    header=header, msg=msg, footer=footer)
-                target.reply(msg).mod.distinguish(sticky=True)
                 target.mod.flair(sub['reasons'][rule]['Flair'])
-                permalink = target.permalink
             elif isinstance(target, Comment):
                 logging.info('Removed comment.')
-                permalink = target.permalink(fast=True)
 
+            permalink = target.permalink
             self.log(subreddit, '{} removed {}'.format(
                 report['author'], permalink))
         # Check for @spam command.
