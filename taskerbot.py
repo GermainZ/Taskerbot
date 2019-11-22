@@ -83,10 +83,9 @@ class Bot(object):
                 report['source'].mod.remove()
             target.mod.remove()
 
-            header = sub['reasons']['Header'].format(
-                author=target.author.name)
-            footer = sub['reasons']['Footer'].format(
-                author=target.author.name)
+            author = target.author.name if target.author is not None else 'OP'
+            header = sub['reasons']['Header'].format(author=author)
+            footer = sub['reasons']['Footer'].format(author=author)
             msg = '{header}\n\n{msg}\n\n{footer}'.format(
                 header=header, msg=msg, footer=footer)
             target.reply(msg).mod.distinguish(sticky=True)
@@ -119,7 +118,9 @@ class Bot(object):
         perma_match = re.search(r'@ban "([^"]*)" "([^"]*)"', report['reason'],
                           re.IGNORECASE) # Permanent ban
         if (temp_match or perma_match):
-            if temp_match:
+            if target.author is None:
+                logging.info('Skipping ban for [deleted] user')
+            elif temp_match:
                 duration = temp_match.group(1)
                 reason = temp_match.group(2)
                 msg = temp_match.group(3)
@@ -128,7 +129,7 @@ class Bot(object):
                 self.r.subreddit(subreddit).banned.add(
                     target.author.name, duration=duration, note=reason,
                     ban_message=msg)
-            if perma_match:
+            elif perma_match:
                 reason = perma_match.group(1)
                 msg = perma_match.group(2)
                 logging.info('Ban (Permanent: %s -- %s) matched.', reason,
