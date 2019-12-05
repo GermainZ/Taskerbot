@@ -12,10 +12,13 @@ from prawcore.exceptions import NotFound
 import yaml
 
 
-REGEX_RULE = re.compile(r"@rule (\w*) *(.*)", re.IGNORECASE)
-REGEX_TEMP_BAN = re.compile(r'@ban (\d*) "([^"]*)" "([^"]*)"', re.IGNORECASE)
-REGEX_PERM_BAN = re.compile(r'@ban "([^"]*)" "([^"]*)"', re.IGNORECASE)
-REGEX_REFRESH = re.compile(r"@refresh (.*)", re.IGNORECASE)
+REGEX_RULE = re.compile(r"[@!]rule (\w*) *(.*)", re.IGNORECASE)
+REGEX_TEMP_BAN = re.compile(
+    r'[@!]ban (\d*) "([^"]*)" "([^"]*)"', re.IGNORECASE
+)
+REGEX_PERM_BAN = re.compile(r'[@!]ban "([^"]*)" "([^"]*)"', re.IGNORECASE)
+REGEX_REFRESH = re.compile(r"[@!]refresh (.*)", re.IGNORECASE)
+REGEX_SPAM = re.compile(r"[@!]spam$", re.IGNORECASE)
 
 SCHEMA_VALIDATOR = jsonschema.Draft7Validator(
     yaml.safe_load(
@@ -150,7 +153,7 @@ class Bot:
             permalink = target.permalink
             self.log(subreddit, f"{report['author']} removed {permalink}")
         # Check for @spam command.
-        if report["reason"].lower().startswith("@spam"):
+        if REGEX_SPAM.search(report["reason"]):
             if report["source"] is not None:
                 report["source"].mod.remove()
             target.mod.remove(spam=True)

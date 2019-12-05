@@ -10,25 +10,25 @@ Usage
 =====
 
 Taskerbot can be invoked by any comment or moderator report containing one of
-the following commands:
+the following commands (you can either use `!` or `@`):
 
-- ``@rule {reason} [note]``: **removes a thread, leaving an appropriate flair
+- ``!rule {reason} [note]``: **removes a thread, leaving an appropriate flair
   and comment**. ``reason`` is one of the removal reasons' keys (see `Removal
   reasons`_). If no corresponding removal reason is found, the ``Generic``
   reason is used instead. If ``note`` is provided, it will be added to the
   message.
 
-  Example: ``@rule 1``, ``@rule spam``, ``@rule repost this is a note``.
+  Example: ``!rule 1``, ``!rule spam``, ``!rule repost this is a note``.
 
-- ``@spam``: **marks the submission as spam and removes it**.
+- ``!spam``: **marks the submission as spam and removes it**.
 
-- ``@ban [duration] "{reason}" "{message}"``: **bans the comment/thread's
+- ``!ban [duration] "{reason}" "{message}"``: **bans the comment/thread's
   author**. The last two arguments are required. ``duration``, if provided, is
   the ban's duration in days, ``reason`` is the ban's reason (visible only to
   mods), and ``message`` is the message the banned user will receive. ``reason``
   and ``message`` must be between quotations (``""```) (escapes are not supported).
 
-  Example: ``@ban 3600 "spammer" "repeatedly spamming somedomain.com"``
+  Example: ``!ban 3600 "spammer" "repeatedly spamming somedomain.com"``
 
 Multiple actions can be specified at once. If Taskerbot was invoked by a
 comment (as opposed to a moderator report), it will automatically remove it.
@@ -36,8 +36,8 @@ comment (as opposed to a moderator report), it will automatically remove it.
 - **Refreshing the list of moderators/removal reasons**:
 
   Taskerbot loads the subreddit's list of moderators and removal reasons at
-  startup. To refresh these, send Taskerbot a message containing ``@refresh
-  Subreddit`` (e.g. ``@refresh Android`` to reload ``/r/Android``'s
+  startup. To refresh these, send Taskerbot a message containing ``!refresh
+  Subreddit`` (e.g. ``!refresh Android`` to reload ``/r/Android``'s
   configuration).
 
   Note that this is case sensitive, so make sure it's the same as what's in the
