@@ -113,10 +113,13 @@ class Bot:
             mod = log.mod.name
             if log.target_fullname:
                 submission = self.r.submission(id=log.target_fullname[3:])
-                #print(submission.link_flair_text)
                 if not submission.link_flair_text:
                     continue
-                report = {'source': submission, 'reason': submission.link_flair_text, 'author': mod}
+                report = {
+                    "source": submission, 
+                    "reason": submission.link_flair_text, 
+                    "author": mod
+                }
                 self.handle_report(subreddit, report, submission)
 
     def check_reports(self, subreddit):
@@ -146,7 +149,7 @@ class Bot:
             if note:
                 msg = f"{msg}\n\n{note}"
 
-            if report["source"] is not None:
+            if report["source"]:
                 report["source"].mod.remove()
             target.mod.remove()
 
