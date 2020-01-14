@@ -1,24 +1,28 @@
+import praw
 import html
 import logging
 import re
 import sys
 import time
+import datetime
 
 import jsonschema
 from praw import Reddit
 from praw.models.reddit.comment import Comment
 from praw.models.reddit.submission import Submission
+from praw.models.reddit.submission import SubmissionFlair
+from praw.models.reddit.subreddit import SubredditModeration
 from prawcore.exceptions import NotFound
 import yaml
 
 
-REGEX_RULE = re.compile(r"[@!]rule (\w*) *(.*)", re.IGNORECASE)
+REGEX_RULE = re.compile(r"[!]rule (\w*) *(.*)", re.IGNORECASE)
 REGEX_TEMP_BAN = re.compile(
-    r'[@!]ban (\d*) "([^"]*)" "([^"]*)"', re.IGNORECASE
+    r'[!]ban (\d*) "([^"]*)" "([^"]*)"', re.IGNORECASE
 )
-REGEX_PERM_BAN = re.compile(r'[@!]ban "([^"]*)" "([^"]*)"', re.IGNORECASE)
-REGEX_REFRESH = re.compile(r"[@!]refresh (.*)", re.IGNORECASE)
-REGEX_SPAM = re.compile(r"[@!]spam$", re.IGNORECASE)
+REGEX_PERM_BAN = re.compile(r'[!]ban "([^"]*)" "([^"]*)"', re.IGNORECASE)
+REGEX_REFRESH = re.compile(r"[!]refresh (.*)", re.IGNORECASE)
+REGEX_SPAM = re.compile(r"[!]spam$", re.IGNORECASE)
 
 SCHEMA_VALIDATOR = jsonschema.Draft7Validator(
     yaml.safe_load(
@@ -47,7 +51,7 @@ SCHEMA_VALIDATOR = jsonschema.Draft7Validator(
 )
 
 
-class Bot:
+class Bot(object):
     def __init__(self, r):
         self.r = r
         logging.debug("Success.")
@@ -80,7 +84,7 @@ class Bot:
                 "r/%s/wiki/taskerbot not found or invalid, ignoring", subreddit
             )
         return mods, reasons
-
+            
     def refresh_sub(self, subreddit):
         logging.info("Refreshing subreddit: %s…", subreddit)
         mods, reasons = self.load_sub_config(subreddit)
@@ -88,11 +92,29 @@ class Bot:
         sub["mods"] = mods
         if reasons is not None:
             sub["reasons"] = reasons
-
+        
+    def check_flairs(self, subreddit):
+        logging.info('Checking subreddit flairs: %s…', subreddit)
+        for log in self.r.subreddit(subreddit).mod.log(action="editflair", limit=75):
+            mod = log.mod.name
+            today = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            if log.target_fullname is not None and log.target_fullname.startswith('t3_'):
+                submission = self.r.submission(id=log.target_fullname[3:])
+                if not submission.link_flair_text:
+                    continue
+                    
+                report = {
+                    "source": None,
+                    "reason": submission.link_flair_text,
+                    "author": mod,
+                }
+                self.handle_report(subreddit, report, submission, today)
+        
     def check_comments(self, subreddit):
-        logging.debug("Checking subreddit: %s…", subreddit)
+        logging.info('Checking subreddit: %s…', subreddit)
         sub = self.subreddits[subreddit]
         for comment in self.r.subreddit(subreddit).comments(limit=100):
+            today = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             if (
                 comment.banned_by
                 or not comment.author
@@ -105,11 +127,12 @@ class Bot:
                 "reason": comment.body,
                 "author": comment.author.name,
             }
-            self.handle_report(subreddit, report, comment.parent())
+            self.handle_report(subreddit, report, comment.parent(), today)
 
     def check_reports(self, subreddit):
-        logging.debug("Checking subreddit reports: %s…", subreddit)
+        logging.info('Checking subreddit reports: %s…', subreddit)
         for reported_submission in self.r.subreddit(subreddit).mod.reports():
+            today = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             if not reported_submission.mod_reports:
                 continue
 
@@ -118,11 +141,11 @@ class Bot:
                 "reason": reported_submission.mod_reports[0][0],
                 "author": reported_submission.mod_reports[0][1],
             }
-            self.handle_report(subreddit, report, reported_submission)
+            self.handle_report(subreddit, report, reported_submission, today)
 
-    def handle_report(self, subreddit, report, target):
+    def handle_report(self, subreddit, report, target, today):
         sub = self.subreddits[subreddit]
-        # Check for @rule command.
+        # Check for !rule command.
         match = REGEX_RULE.search(report["reason"])
         if match:
             rule = match.group(1)
@@ -151,8 +174,10 @@ class Bot:
                 logging.info("Removed comment.")
 
             permalink = target.permalink
-            self.log(subreddit, f"{report['author']} removed {permalink}")
-        # Check for @spam command.
+
+            self.log(subreddit, '\n\n{} removed {} on {} EST'.format(
+                report['author'], permalink, today))
+        # Check for !spam command.
         if REGEX_SPAM.search(report["reason"]):
             if report["source"] is not None:
                 report["source"].mod.remove()
@@ -163,10 +188,9 @@ class Bot:
             elif isinstance(target, Comment):
                 logging.info("Removed comment (spam).")
                 permalink = target.permalink(fast=True)
-            self.log(
-                subreddit, f"{report['author']} removed {permalink} (spam)"
-            )
-        # Check for @ban command.
+            self.log(subreddit, '\n\n{} removed {} (spam) on {} EST'.format(
+                report['author'], permalink, today))
+        # Check for !ban command.
         temp_match = REGEX_TEMP_BAN.search(report["reason"])
         perma_match = REGEX_PERM_BAN.search(report["reason"])
         if temp_match or perma_match:
@@ -197,10 +221,8 @@ class Bot:
             target.mod.remove()
             if target.author is not None:
                 logging.info("User banned.")
-                self.log(
-                    subreddit,
-                    f"{report['author']} banned u/{target.author.name}",
-                )
+                self.log(subreddit, '\n\n{} banned u/{} on {} EST'.format(
+                    report['author'], target.author.name, today))
 
     def log(self, subreddit, msg):
         if not self.logging_enabled:
@@ -237,7 +259,7 @@ class Bot:
                     mail.reply(f"Unauthorized: not an r/{subreddit} mod")
             else:
                 mail.reply(f"Unrecognized sub: {subreddit}.")
-
+    
     def run(self):
         while True:
             logging.debug("Running cycle…")
@@ -245,6 +267,7 @@ class Bot:
                 if self.subreddits[subreddit]["reasons"] is None:
                     continue
                 try:
+                    self.check_flairs(subreddit)
                     self.check_comments(subreddit)
                     self.check_reports(subreddit)
                 except Exception as exception:
@@ -255,7 +278,6 @@ class Bot:
                 logging.exception(exception)
             logging.debug("Sleeping…")
             time.sleep(32)  # PRAW caches responses for 30s.
-
 
 if __name__ == "__main__":
     with open("config.yaml") as config_file:
