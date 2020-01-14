@@ -16,13 +16,13 @@ from prawcore.exceptions import NotFound
 import yaml
 
 
-REGEX_RULE = re.compile(r"[!]rule (\w*) *(.*)", re.IGNORECASE)
+REGEX_RULE = re.compile(r"[@!]rule (\w*) *(.*)", re.IGNORECASE)
 REGEX_TEMP_BAN = re.compile(
-    r'[!]ban (\d*) "([^"]*)" "([^"]*)"', re.IGNORECASE
+    r'[@!]ban (\d*) "([^"]*)" "([^"]*)"', re.IGNORECASE
 )
-REGEX_PERM_BAN = re.compile(r'[!]ban "([^"]*)" "([^"]*)"', re.IGNORECASE)
-REGEX_REFRESH = re.compile(r"[!]refresh (.*)", re.IGNORECASE)
-REGEX_SPAM = re.compile(r"[!]spam$", re.IGNORECASE)
+REGEX_PERM_BAN = re.compile(r'[@!]ban "([^"]*)" "([^"]*)"', re.IGNORECASE)
+REGEX_REFRESH = re.compile(r"[@!]refresh (.*)", re.IGNORECASE)
+REGEX_SPAM = re.compile(r"[@!]spam$", re.IGNORECASE)
 
 SCHEMA_VALIDATOR = jsonschema.Draft7Validator(
     yaml.safe_load(
