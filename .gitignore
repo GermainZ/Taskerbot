@@ -1,1 +1,4 @@
 config.yaml
+Pipfile
+Pipfile.lock
+.vscode/**
