@@ -129,14 +129,14 @@ patrol.
 
       Footer: "If you would like to appeal, please message the moderators. *I am a bot, but this message was generated at the instruction of a human moderator.*"
 
-      Generic:
+      'Generic':
 
           Flair: 'Removed'
 
           Message: |
               Please review our sidebar for the complete list of rules.
 
-      1:
+      '1':
 
           Flair: "Removed (Rule 1)"
 
@@ -144,7 +144,7 @@ patrol.
               Sorry, your post was removed as it breaks rule 1!
               Check our wiki for more info.
 
-      2:
+      '2':
 
           Flair: "Removed (Rule 2)"
 
@@ -159,7 +159,7 @@ patrol.
               - /r/SomeOtherSubreddit - for Y.
               - /r/YetAnotherSubreddit - for Z.
 
-      spam:
+      'spam':
 
           Flair: "Removed (Spam)"
 
