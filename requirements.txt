@@ -1,4 +1,4 @@
 jsonschema==3.2.0
-praw==6.4.0
-requests==2.22.0
-PyYAML==5.1.2
+praw==7.2.0
+requests==2.25.1
+PyYAML==5.4.1
