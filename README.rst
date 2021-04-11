@@ -189,6 +189,31 @@ PS. Make sure to make the wiki pages editable by mods only.
 
 Use a `YAML validator`_ to make sure the configuration file is valid.
 
+Tips
+====
+
+You might want to leverage AutoModerator to lock Taskerbot's comments. For
+example:
+
+.. code:: yaml
+
+    #Lock any comment Taskerbot makes
+        type: comment
+        author: [Taskerbot]
+        moderators_exempt: false
+        set_locked: true
+        priority: 9
+    ---
+    #Lock any comment a mod makes when invoking Taskerbot
+        type: comment
+        body (regex): ["@rule"]
+        author:
+            is_moderator: true
+        moderators_exempt: false
+        set_locked: true
+        priority: 10
+
+
 .. _YAML validator: http://www.yamllint.com/
 .. _YAML: http://www.yaml.org/
 .. _OAuth2 First Steps guide: https://github.com/reddit/reddit/wiki/OAuth2-Quick-Start-Example#first-steps
