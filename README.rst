@@ -206,7 +206,7 @@ example:
     ---
     #Lock any comment a mod makes when invoking Taskerbot
         type: comment
-        body (regex): ["!|@rule"]
+        body (regex): ["[!@]rule"]
         author:
             is_moderator: true
         moderators_exempt: false
